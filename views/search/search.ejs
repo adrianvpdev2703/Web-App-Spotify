@@ -1,0 +1,128 @@
+<%- include('../partials/header', { title: 'Resultados de búsqueda' }) %>
+
+<div class="text-center mb-4">
+  <h1>Resultados para: "<%= query %>"</h1>
+</div>
+
+<div id="contenido" class="row g-4"></div>
+
+<script>
+  const query = "<%= query %>";
+  const contenidoDiv = document.getElementById("contenido");
+
+  const createCard = (title, img = "", extraHtml = "") => `
+  <div class="col-md-4">
+    <div class="card h-100 bg-dark text-white">
+      ${img ? `<img src="${img}" class="card-img-top" alt="${title}">` : ""}
+      <div class="card-body">
+        <h5 class="card-title">${title}</h5>
+        ${extraHtml}
+      </div>
+    </div>
+  </div>
+`;
+
+  const buscarGlobal = async () => {
+    contenidoDiv.innerHTML = "Buscando...";
+
+    const [resGeneros, resArtistas, resAlbumes, resCanciones] =
+      await Promise.all([
+        fetch("/generos/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: query }),
+        }).then((r) => r.json()),
+
+        fetch("/artistas/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: query }),
+        }).then((r) => r.json()),
+
+        fetch("/albumes/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: query }),
+        }).then((r) => r.json()),
+
+        fetch("/canciones/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: query }),
+        }).then((r) => r.json()),
+      ]);
+
+    contenidoDiv.innerHTML = "";
+
+    if (resGeneros.length) {
+      contenidoDiv.innerHTML +=
+        "<h4>Géneros</h4><div class='row g-4'>" +
+        resGeneros
+          .map((g) =>
+            createCard(
+              g.nombre,
+              g.imagen,
+              `<button class="btn btn-success w-100" onclick="verArtistasGenero(${g.id})">Ver Artistas</button>`
+            )
+          )
+          .join("") +
+        "</div>";
+    }
+
+    if (resArtistas.length) {
+      contenidoDiv.innerHTML +=
+        "<h4>Artistas</h4><div class='row g-4'>" +
+        resArtistas.map((a) => createCard(a.nombre, a.imagen || "")).join("") +
+        "</div>";
+    }
+
+    if (resAlbumes.length) {
+      contenidoDiv.innerHTML +=
+        "<h4>Álbumes</h4><div class='row g-4'>" +
+        resAlbumes
+          .map((a) =>
+            createCard(
+              a.nombre,
+              a.imagen || "",
+              `<p>Artista: ${a.artistaData?.nombre || ""}</p>
+         <button class="btn btn-success w-100" onclick="verCancionesAlbum(${
+           a.id
+         })">Ver Canciones</button>
+         <div id="album-canciones-${a.id}"></div>`
+            )
+          )
+          .join("") +
+        "</div>";
+    }
+
+    if (resCanciones.length) {
+      contenidoDiv.innerHTML +=
+        "<h4>Canciones</h4><div class='row g-4'>" +
+        resCanciones
+          .map((c) =>
+            createCard(
+              c.nombre,
+              c.imagen || "",
+              `<p>Álbum: ${c.albumData?.nombre || ""}</p>
+         <audio controls src="${c.archivo}"></audio>`
+            )
+          )
+          .join("") +
+        "</div>";
+    }
+
+    if (
+      !resGeneros.length &&
+      !resArtistas.length &&
+      !resAlbumes.length &&
+      !resCanciones.length
+    ) {
+      contenidoDiv.innerHTML = "<p>No se encontraron resultados</p>";
+    }
+  };
+
+  // Ejecutar búsqueda al cargar la página
+  buscarGlobal();
+</script>
+
+<%- include('../partials/footer') %>

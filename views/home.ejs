@@ -1,0 +1,163 @@
+<%- include('partials/header', { title: 'Spotify Clone' }) %>
+
+<div class="text-center mb-4">
+  <h1>Spotify Clone</h1>
+  <input
+    type="text"
+    id="buscador"
+    class="form-control w-50 mx-auto mb-3"
+    placeholder="Buscar..."
+    onkeydown="if(event.key==='Enter'){ window.location.href=`/search?q=${this.value}` }"
+  />
+
+  <div class="btn-group" role="group">
+    <button class="btn btn-success" onclick="mostrar('generos')">
+      Géneros
+    </button>
+    <button class="btn btn-primary" onclick="mostrar('artistas')">
+      Artistas
+    </button>
+    <button class="btn btn-warning" onclick="mostrar('albumes')">
+      Álbumes
+    </button>
+    <button class="btn btn-info" onclick="mostrar('canciones')">
+      Canciones
+    </button>
+  </div>
+</div>
+
+<div id="contenido" class="row g-4"></div>
+
+<script>
+  const contenidoDiv = document.getElementById("contenido");
+
+  const createCard = (title, img = "", extraHtml = "") => `
+    <div class="col-md-4">
+      <div class="card h-100 bg-dark text-white">
+        ${img ? `<img src="${img}" class="card-img-top" alt="${title}">` : ""}
+        <div class="card-body">
+          <h5 class="card-title">${title}</h5>
+          ${extraHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const mostrar = async (tipo) => {
+    contenidoDiv.innerHTML = "Cargando...";
+    if (tipo === "generos") await cargarGeneros();
+    if (tipo === "artistas") await cargarArtistas();
+    if (tipo === "albumes") await cargarAlbumes();
+    if (tipo === "canciones") await cargarCanciones();
+  };
+
+  // --- Géneros ---
+  const cargarGeneros = async () => {
+    const res = await fetch("/generos");
+    const data = await res.json();
+    contenidoDiv.innerHTML = data
+      .map((g) =>
+        createCard(
+          g.nombre,
+          g.imagen,
+          `<button class="btn btn-success w-100" onclick="verArtistasGenero(${g.id})">Ver Artistas</button>`
+        )
+      )
+      .join("");
+  };
+
+  // --- Artistas ---
+  const cargarArtistas = async () => {
+    const res = await fetch("/artistas");
+    const data = await res.json();
+    contenidoDiv.innerHTML = data
+      .map((a) => {
+        // Revisamos que la imagen exista y tenga la ruta correcta
+        const imgSrc = a.imagen ? a.imagen : "";
+        return createCard(a.nombre, imgSrc);
+      })
+      .join("");
+  };
+
+  // --- Álbumes ---
+  const cargarAlbumes = async () => {
+    const res = await fetch("/albumes");
+    const data = await res.json();
+    contenidoDiv.innerHTML = data
+      .map((a) => {
+        const imgSrc = a.imagen ? a.imagen : "";
+        return createCard(
+          a.nombre,
+          imgSrc,
+          `<p>Artista: ${a.artistaData?.nombre || ""}</p>
+         <button class="btn btn-success w-100" onclick="verCancionesAlbum(${
+           a.id
+         })">Ver Canciones</button>
+         <div id="album-canciones-${a.id}"></div>`
+        );
+      })
+      .join("");
+  };
+
+  const verArtistasGenero = async (generoId) => {
+    contenidoDiv.innerHTML = `<h4>Artistas de este género</h4>`;
+    const resRel = await fetch("/artistaxgenero");
+    const relData = await resRel.json();
+    const artistasIds = relData
+      .filter((r) => r.genero == generoId)
+      .map((r) => r.artista);
+
+    const resArtistas = await fetch("/artistas");
+    const artistasData = await resArtistas.json();
+    const artistas = artistasData.filter((a) => artistasIds.includes(a.id));
+
+    contenidoDiv.innerHTML +=
+      '<ul class="list-group">' +
+      artistas
+        .map(
+          (a) =>
+            `<li class="list-group-item bg-dark text-white">${a.nombre}</li>`
+        )
+        .join("") +
+      "</ul>";
+  };
+
+  const verCancionesAlbum = async (albumId) => {
+    const divCanciones = document.getElementById(`album-canciones-${albumId}`);
+    divCanciones.innerHTML = "Cargando canciones...";
+
+    const res = await fetch("/canciones");
+    const data = await res.json();
+    const canciones = data.filter((c) => c.album == albumId);
+
+    divCanciones.innerHTML =
+      `<ul>` +
+      canciones
+        .map(
+          (c) => `
+      <li>${c.nombre} <audio controls src="${c.archivo}"></audio></li>
+    `
+        )
+        .join("") +
+      `</ul>`;
+  };
+
+  // --- Canciones ---
+  const cargarCanciones = async () => {
+    const res = await fetch("/canciones");
+    const data = await res.json();
+    contenidoDiv.innerHTML = data
+      .map((c) =>
+        createCard(
+          c.nombre,
+          c.imagen,
+          `<p>Álbum: ${c.albumData?.nombre || ""}</p><audio controls src="${
+            c.archivo
+          }"></audio>`
+        )
+      )
+      .join("");
+  };
+</script>
+
+<%- include('partials/footer') %>

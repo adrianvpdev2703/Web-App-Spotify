@@ -1,0 +1,168 @@
+<%- include('../partials/header', { title: 'Administrar Álbumes' }) %>
+
+<div class="container mt-4">
+  <h2 class="text-white">Álbumes</h2>
+
+  <!-- Insert -->
+  <form id="form-insert-album" enctype="multipart/form-data">
+    <h4 class="text-white">Crear Álbum</h4>
+    <div class="mb-3">
+      <label class="form-label text-white">Nombre</label>
+      <input type="text" name="nombre" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Artista ID</label>
+      <input type="number" name="artista" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Imagen</label>
+      <input type="file" name="imagen" class="form-control" />
+    </div>
+    <button class="btn btn-success">Crear</button>
+  </form>
+
+  <!-- PUT -->
+  <form id="form-put-album" enctype="multipart/form-data" class="mt-3">
+    <h4 class="text-white">Actualizar Álbum (PUT)</h4>
+    <div class="mb-3">
+      <label class="form-label text-white">ID</label>
+      <input type="number" id="put-album-id" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Nombre</label>
+      <input type="text" name="nombre" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Artista ID</label>
+      <input type="number" name="artista" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Imagen</label>
+      <input type="file" name="imagen" class="form-control" />
+    </div>
+    <button class="btn btn-primary">Actualizar (PUT)</button>
+  </form>
+
+  <!-- PATCH -->
+  <form id="form-patch-album" enctype="multipart/form-data" class="mt-3">
+    <h4 class="text-white">Actualizar Álbum (PATCH)</h4>
+    <div class="mb-3">
+      <label class="form-label text-white">ID</label>
+      <input type="number" id="patch-album-id" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Nombre</label>
+      <input type="text" name="nombre" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Artista ID</label>
+      <input type="number" name="artista" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Imagen</label>
+      <input type="file" name="imagen" class="form-control" />
+    </div>
+    <button class="btn btn-warning">Actualizar (PATCH)</button>
+  </form>
+
+  <!-- Delete -->
+  <form id="form-delete-album" class="mt-3">
+    <h4 class="text-white">Eliminar Álbum</h4>
+    <div class="mb-3">
+      <label class="form-label text-white">ID</label>
+      <input type="number" id="delete-album-id" class="form-control" required />
+    </div>
+    <button class="btn btn-danger">Eliminar</button>
+  </form>
+
+  <!-- Search -->
+  <form id="form-search-album" class="mt-3">
+    <h4 class="text-white">Buscar Álbum</h4>
+    <div class="mb-3">
+      <label class="form-label text-white">Nombre</label>
+      <input type="text" name="nombre" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label text-white">Artista ID</label>
+      <input type="number" name="artista" class="form-control" />
+    </div>
+    <button class="btn btn-info">Buscar</button>
+  </form>
+
+  <div id="resultado" class="mt-3 text-white"></div>
+</div>
+
+<script>
+  const resultado = document.getElementById("resultado");
+  const showResult = async (res) => {
+    try {
+      const data = await res.json();
+      resultado.innerText = JSON.stringify(data, null, 2);
+    } catch {
+      resultado.innerText = await res.text();
+    }
+  };
+
+  // Insert
+  document
+    .getElementById("form-insert-album")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const res = await fetch("/albumes", { method: "POST", body: fd });
+      showResult(res);
+    });
+
+  // PUT
+  document
+    .getElementById("form-put-album")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("put-album-id").value;
+      const fd = new FormData(e.target);
+      fd.delete("id"); // id solo va en URL
+      const res = await fetch("/albumes/" + id, { method: "PUT", body: fd });
+      showResult(res);
+    });
+
+  // PATCH
+  document
+    .getElementById("form-patch-album")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("patch-album-id").value;
+      const fd = new FormData(e.target);
+      fd.delete("id"); // id solo va en URL
+      const res = await fetch("/albumes/" + id, { method: "PATCH", body: fd });
+      showResult(res);
+    });
+
+  // DELETE
+  document
+    .getElementById("form-delete-album")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("delete-album-id").value;
+      const res = await fetch("/albumes/" + id, { method: "DELETE" });
+      showResult(res);
+    });
+
+  // SEARCH
+  document
+    .getElementById("form-search-album")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = {
+        nombre: e.target.nombre.value,
+        artista: e.target.artista.value || undefined,
+      };
+      const res = await fetch("/albumes/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      showResult(res);
+    });
+</script>
+
+<%- include('../partials/footer') %>

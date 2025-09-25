@@ -1,0 +1,28 @@
+<%- include('../partials/header', { title: 'Panel Admin' }) %>
+
+<div class="container mt-4">
+  <h1 class="text-white">Administrador</h1>
+
+  <div class="list-group mt-4">
+    <a href="/admin/artistas" class="list-group-item list-group-item-action">
+      Artistas
+    </a>
+    <a href="/admin/albumes" class="list-group-item list-group-item-action">
+      Álbumes
+    </a>
+    <a href="/admin/generos" class="list-group-item list-group-item-action">
+      Géneros
+    </a>
+    <a href="/admin/canciones" class="list-group-item list-group-item-action">
+      Canciones
+    </a>
+    <a
+      href="/admin/artistaxgenero"
+      class="list-group-item list-group-item-action"
+    >
+      Artistas x Género
+    </a>
+  </div>
+</div>
+
+<%- include("../partials/footer") %>
